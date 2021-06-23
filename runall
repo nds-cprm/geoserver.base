@@ -1,0 +1,10 @@
+
+docker run --rm --name gn -p 8080:8080 -e JAVA_OPTS="
+    -Dgeonetwork.db.type=postgres
+    -Djdbc.database=example
+    -Djdbc.username=example
+    -Djdbc.password=xxx
+    -Djdbc.host=localhost
+    -Djdbc.port=5432" geonetwork:latest
+
+
