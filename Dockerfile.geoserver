@@ -1,8 +1,13 @@
 # vim:set ft=dockerfile:
 # ? have gosu, libnss-wrapper, procps
-FROM cprm.nds:tomcat2refer
-# FROM debian:buster-slim
+ARG BASE_IMAGE=tomcat:8.5-jdk8
+FROM ${BASE_IMAGE}
+
 ENV LANG C.UTF8
+
+# at 30/03/2021 geoserver-2.19.0-war.zip 16137e589457ef2dd8031b75dfb1aa52  download
+ENV GEOSERVER_VERSION=2.19.0
+ENV GEOSERVER_CHECKSUM=16137e589457ef2dd8031b75dfb1aa52
 
 # sane 1
 RUN mkdir -p /usr/share/man/man1
@@ -12,19 +17,26 @@ RUN set -eux; \
 	apt upgrade -y ; \
 	apt install -y wget unzip zip
 
-# simplify
-ENV JAVA_HOME /usr/lib/java
-
-# at 30/03/2021 geoserver-2.19.0-war.zip 16137e589457ef2dd8031b75dfb1aa52  download
 
 RUN set -eux; \
-	mkdir -p /opt/tomcat/webapps/geoserver ; \
-	cd /opt/tomcat/webapps/geoserver ; \
-	echo "16137e589457ef2dd8031b75dfb1aa52  download" > md5 ; \
-	wget https://sourceforge.net/projects/geoserver/files/GeoServer/2.19.0/geoserver-2.19.0-war.zip/download ; \
+	mkdir -p ${CATALINA_HOME}/webapps/geoserver ; \
+	cd ${CATALINA_HOME}/webapps/geoserver ; \
+	echo "${GEOSERVER_CHECKSUM}  download" > md5 ; \
+	wget https://sourceforge.net/projects/geoserver/files/GeoServer/${GEOSERVER_VERSION}/geoserver-${GEOSERVER_VERSION}-war.zip/download ; \
 	md5sum -c md5 || exit ; \
 	unzip download ; rm download ; \
 	unzip geoserver.war ; rm geoserver.war
+
+# simplify and install default plugins
+COPY ./plugins /tmp
+
+WORKDIR /tmp
+
+# install minimal plugins
+# run do_plugins_list_all for complet list
+RUN set -eux; \
+	sh ./do_plugins_install.sh geoserver.plugins.minimal ; \
+	sh ./do_locales_pt_BR_clean.sh > /dev/null 
 
 # clean 
 RUN set -eux; \
